@@ -1,4 +1,5 @@
-import { useContext, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
+import { apiClient } from '../api/client';
 import DataTable from '../components/table/DataTable';
 import Modal from '../components/ui/Modal';
 import Button from '../components/ui/Button';
@@ -7,7 +8,39 @@ import { mockUsers } from '../data/mockUsers';
 
 function UsersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [users, setUsers] = useState(mockUsers);
   const { notify } = useContext(NotificationContext);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadUsers() {
+      if (!apiClient.isEnabled()) {
+        return;
+      }
+
+      try {
+        const response = await apiClient.getUsers();
+        if (isMounted) {
+          setUsers(response);
+        }
+      } catch {
+        if (isMounted) {
+          notify({
+            title: 'Backend unavailable',
+            message: 'Showing local mock users because the API could not be reached.',
+            type: 'warning',
+          });
+        }
+      }
+    }
+
+    loadUsers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [notify]);
 
   const columns = useMemo(
     () => [
@@ -42,7 +75,12 @@ function UsersPage() {
         <Button onClick={() => setIsModalOpen(true)}>Invite User</Button>
       </div>
 
-      <DataTable title="Workspace Members" subtitle="Live mock table with reusable sorting and pagination" columns={columns} data={mockUsers} />
+      <DataTable
+        title="Workspace Members"
+        subtitle={apiClient.isEnabled() ? 'Live data from the Spring Boot API' : 'Live mock table with reusable sorting and pagination'}
+        columns={columns}
+        data={users}
+      />
 
       <Modal
         isOpen={isModalOpen}

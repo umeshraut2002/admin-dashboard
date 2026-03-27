@@ -1,4 +1,5 @@
 import { createContext, useEffect, useMemo, useState } from 'react';
+import { apiClient } from '../api/client';
 import { generateToken, getMockUserFromEmail } from '../utils/auth';
 import { STORAGE_KEYS } from '../utils/constants';
 import { storage } from '../utils/storage';
@@ -21,15 +22,15 @@ export function AuthProvider({ children }) {
 
   const login = async ({ email, password }) => {
     await new Promise((resolve) => window.setTimeout(resolve, 800));
-    const user = getMockUserFromEmail(email);
-
-    const nextSession = {
-      token: generateToken(email),
-      user: {
-        ...user,
-        passwordHint: password.length >= 8 ? 'Strong password entered' : 'Weak password entered',
-      },
-    };
+    const nextSession = apiClient.isEnabled()
+      ? await apiClient.login({ email, password })
+      : {
+          token: generateToken(email),
+          user: {
+            ...getMockUserFromEmail(email),
+            passwordHint: password.length >= 8 ? 'Strong password entered' : 'Weak password entered',
+          },
+        };
 
     setSession(nextSession);
     storage.set(STORAGE_KEYS.auth, nextSession);
@@ -48,6 +49,7 @@ export function AuthProvider({ children }) {
       token: session.token,
       isAuthenticated: Boolean(session.token),
       isLoading,
+      isApiMode: apiClient.isEnabled(),
       login,
       logout,
     }),

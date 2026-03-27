@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { NotificationContext } from '../context/NotificationContext';
 
 function LoginPage() {
-  const { isAuthenticated, login } = useAuth();
+  const { isAuthenticated, login, isApiMode } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { notify } = useContext(NotificationContext);
@@ -36,7 +36,7 @@ function LoginPage() {
     } catch {
       notify({
         title: 'Login failed',
-        message: 'Unable to complete mock sign-in.',
+        message: isApiMode ? 'Unable to reach the backend sign-in API.' : 'Unable to complete mock sign-in.',
         type: 'error',
       });
     } finally {
@@ -77,7 +77,9 @@ function LoginPage() {
 
       <div className="flex items-center justify-center p-6">
         <Card className="w-full max-w-md p-7">
-          <p className="text-sm font-semibold uppercase tracking-[0.35em] text-brand-500">Mock Authentication</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.35em] text-brand-500">
+            {isApiMode ? 'Spring Boot Authentication' : 'Mock Authentication'}
+          </p>
           <h2 className="mt-4 text-3xl font-bold text-slate-900 dark:text-white">Sign in to continue</h2>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             Use admin@saasboard.io / Admin@123 for Admin or user@saasboard.io / User@123 for User.
